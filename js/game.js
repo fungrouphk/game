@@ -36,10 +36,12 @@
 
 	var Init = {
 		start : function(id) {
+			objectList = new Array();
 			this.initCanvas(id);
 
 			// init the world here
 			this.initWorld();
+			
 			
 			// Game GameLoop here
 			(function run() {
@@ -49,8 +51,9 @@
 				// Based on the result of box2D, update our object
 				if (DEBUG) {
 					world.DrawDebugData();
+				} else {
+					GameLoop.draw();
 				}
-				GameLoop.draw();
 				requestAnimFrame(run);
 			})();
 		},
@@ -77,26 +80,22 @@
 			}
 
          	
-		     var bodyDef = new b2BodyDef;
-		     var fixDef = new b2FixtureDef;
-	         //create ground
-	         bodyDef.type = b2Body.b2_staticBody;
-	         bodyDef.position.x = Helper.pxToMeter(640);
-	         bodyDef.position.y = Helper.pxToMeter(700);
-	         bodyDef.userData = "ground";
-	         fixDef.shape = new b2PolygonShape;
-	         fixDef.shape.SetAsBox(Helper.pxToMeter(640), Helper.pxToMeter(20));
-	         fixDef.restitution = 0.5;
-	         world.CreateBody(bodyDef).CreateFixture(fixDef);
+		    var ground = new Ground();
+	        ground.addToWorld();
+	        objectList["ground"] = ground; 
 	         
-	         // a on9 ball to test the ground only, delete it later
-	         bodyDef.type = b2Body.b2_dynamicBody;
-	         bodyDef.position.x = Helper.pxToMeter(640);
-	         bodyDef.position.y = Helper.pxToMeter(0);
-	         fixDef.shape = new b2CircleShape(Helper.pxToMeter(30))
-	         world.CreateBody(bodyDef).CreateFixture(fixDef);
+	        
+ 			var bodyDef = new b2BodyDef;
+			var fixDef = new b2FixtureDef;
+	        // a ball to test the ground only, delete it later
+	        bodyDef.type = b2Body.b2_dynamicBody;
+	        bodyDef.position.x = Helper.pxToMeter(640);
+	        bodyDef.position.y = Helper.pxToMeter(0);
+	        fixDef.shape = new b2CircleShape(Helper.pxToMeter(30))
+	        world.CreateBody(bodyDef).CreateFixture(fixDef);
 		}
 	};
+	
 
 	var GameLoop = {
 		step : function() {
@@ -113,12 +112,15 @@
 				// }
 			// }
 		},
+
 		draw : function() {
-			if (!DEBUG) {
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				// TODO: Draw using context
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			for (key in objectList) {
+				objectList[key].draw();
 			}
+
 		}
+
 	};
 
 	// Util functions
@@ -128,8 +130,59 @@
 		},
 
 		meterToPx : function(meter) {
-			return meter / SCALE;
+			return meter * SCALE;
 		}
+	};
+	
+		var Box2DObject = function(cv) {
+		this.x = cv.x;
+		this.y = cv.y;
+		this.angle = cv.angle;
+		this.color = cv.color;
+	};
+	
+	Box2DObject.prototype.update = function(bodySpec) {
+		this.x = Helper.meterToPx(bodySpec.x);
+		this.y = Helper.meterToPx(bodySpec.y);
+		this.angle = bodySpec.angle;
+	};
+	
+	
+	var Ground = function () {
+		Box2DObject.call(this, {x: 640, y: 700, angle: 0, color: "#cdaf95"});
+		this.width = 1280;
+		this.height = 40;
+	};
+	
+	Ground.prototype = Box2DObject;
+
+	Ground.prototype.addToWorld = function() {
+		var bodyDef = new b2BodyDef;
+		var fixDef = new b2FixtureDef;
+		//create ground
+		bodyDef.type = b2Body.b2_staticBody;
+		bodyDef.position.x = Helper.pxToMeter(this.x);
+		bodyDef.position.y = Helper.pxToMeter(this.y);
+		bodyDef.userData = "ground";
+		fixDef.shape = new b2PolygonShape;
+		fixDef.shape.SetAsBox(Helper.pxToMeter(this.width / 2), Helper.pxToMeter(this.height / 2));
+		fixDef.restitution = 0.5;
+		world.CreateBody(bodyDef).CreateFixture(fixDef);
+	};
+	
+	Ground.prototype.draw = function() {
+		ctx.save();
+		ctx.translate(this.x, this.y);
+		ctx.rotate(this.angle);
+		ctx.translate(-this.x, -this.y);
+		ctx.fillStyle = this.color;
+		ctx.fillRect(
+		    this.x-(this.width / 2),
+		    this.y-(this.height / 2),
+		    this.width,
+		    this.height
+		);
+		ctx.restore();
 	};
 
 	
