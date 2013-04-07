@@ -89,17 +89,42 @@
 				height : 40,
 				angle : 0,
 				color : "#8b4513"
-			}); 
+			});
 
 	        objectList["ground"] = ground; 
 
+
+            var car = new Car(
+                {
+                    width : 200,
+                    height : 40,
+                    radius : 10,
+                    x : 100,
+                    velocity : 10
+                }
+            );
+            objectList["car1"] = car; 
+
+            var car = new Car(
+                {
+                    width : 200,
+                    height : 40,
+                    radius : 10,
+                    x : 1200,
+                    velocity : -10
+                }
+            );
+            objectList["car2"] = car; 
+            
  			var bodyDef = new b2BodyDef;
 			var fixDef = new b2FixtureDef;
 	        // a ball to test the ground only, delete it later
 	        bodyDef.type = b2Body.b2_dynamicBody;
 	        bodyDef.position.x = Helper.pxToMeter(640);
 	        bodyDef.position.y = Helper.pxToMeter(0);
-	        fixDef.shape = new b2CircleShape(Helper.pxToMeter(30))
+	        fixDef.shape = new b2CircleShape(Helper.pxToMeter(30));
+	        fixDef.friction = 0.3;
+            fixDef.density = 1;
 	        world.CreateBody(bodyDef).CreateFixture(fixDef);
 		}
 	};
@@ -168,7 +193,58 @@
 		);
 		ctx.restore();
 	};
+	
+	
+    Ground.prototype.heightAboveGroundToY = function(heightAboveGround) {
+        return canvas.height - this.height + heightAboveGround;
+    }
+	
+	var Car = function (options) {
+		var bodyDef = new b2BodyDef;
+		bodyDef.type = b2Body.b2_dynamicBody;
+		var fixDef = new b2FixtureDef;
+		fixDef.density = 30;
+		fixDef.friction = 10;
+		fixDef.restitution = 0.1;
+		fixDef.shape = new b2CircleShape(Helper.pxToMeter(options.radius));
 
+		var wheel1 = world.CreateBody(bodyDef)
+		wheel1.CreateFixture(fixDef);
+		var wheel2 = world.CreateBody(bodyDef)
+		wheel2.CreateFixture(fixDef);
+
+		var bodyDef = new b2BodyDef;
+		bodyDef.type = b2Body.b2_dynamicBody;
+						
+		// FIXME: investigate why the y value is wrong here! (now floating on the air...)
+		bodyDef.position.Set(Helper.pxToMeter(options.x), Helper.pxToMeter(680 - options.height / 2 - 2 * options.radius));
+		fixDef.shape = new b2PolygonShape;
+		fixDef.shape.SetAsBox(Helper.pxToMeter(options.width / 2), Helper.pxToMeter(options.height / 2));
+		var car = world.CreateBody(bodyDef);
+		car.CreateFixture(fixDef);
+
+        var myjoint = new b2RevoluteJointDef();
+        myjoint.bodyA = car;
+        myjoint.bodyB = wheel1;
+        myjoint.localAnchorA.Set(-Helper.pxToMeter(options.width / 4), Helper.pxToMeter(options.height / 2));
+        myjoint.enableMotor = true;
+        myjoint.maxMotorTorque = 10;
+        myjoint.motorSpeed = options.velocity;
+        world.CreateJoint(myjoint);
+
+        myjoint.bodyA = car;
+        myjoint.bodyB = wheel2;
+        myjoint.localAnchorA.Set(Helper.pxToMeter(options.width / 4), Helper.pxToMeter(options.height / 2));
+        world.CreateJoint(myjoint); 
+
+	};
+	
+	Car.prototype.draw = function() {
+
+	};
+
+	
+	
 	
 	Init.start('game_canvas');
 	
