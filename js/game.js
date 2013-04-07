@@ -45,10 +45,11 @@
 			
 			// Game GameLoop here
 			(function run() {
-				GameLoop.step();
 				// let box2D to calculate the next step of object
+				GameLoop.step();
+				// Update our object if needed
 				GameLoop.update();
-				// Based on the result of box2D, update our object
+				// Finally, draw on the screen
 				if (DEBUG) {
 					world.DrawDebugData();
 				} else {
@@ -80,11 +81,18 @@
 			}
 
          	
-		    var ground = new Ground();
-	        ground.addToWorld();
+		   
+			var ground = new Ground({
+				x : 640,
+				y : 700,
+				width : 1280,
+				height : 40,
+				angle : 0,
+				color : "#8b4513"
+			}); 
+
 	        objectList["ground"] = ground; 
-	         
-	        
+
  			var bodyDef = new b2BodyDef;
 			var fixDef = new b2FixtureDef;
 	        // a ball to test the ground only, delete it later
@@ -103,14 +111,8 @@
 			world.Step(stepRate, 10, 10);
 			world.ClearForces();
 		},
-		update : function() {
-			//TODO: loop through the box2d object, get the calculation value back to our object
-			
-			// for (var b = world.GetBodyList(); b; b = b.m_next) {
-				// if (b.IsActive() && typeof b.GetUserData() !== 'undefined' && b.GetUserData() != null) {
-					// shapes[b.GetUserData()].update(box2d.get.bodySpec(b));
-				// }
-			// }
+		update : function() {			
+	
 		},
 
 		draw : function() {
@@ -133,59 +135,40 @@
 			return meter * SCALE;
 		}
 	};
-	
-		var Box2DObject = function(cv) {
-		this.x = cv.x;
-		this.y = cv.y;
-		this.angle = cv.angle;
-		this.color = cv.color;
-	};
-	
-	Box2DObject.prototype.update = function(bodySpec) {
-		this.x = Helper.meterToPx(bodySpec.x);
-		this.y = Helper.meterToPx(bodySpec.y);
-		this.angle = bodySpec.angle;
-	};
-	
-	
-	var Ground = function () {
-		Box2DObject.call(this, {x: 640, y: 700, angle: 0, color: "#cdaf95"});
-		this.width = 1280;
-		this.height = 40;
-	};
-	
-	Ground.prototype = Box2DObject;
-
-	Ground.prototype.addToWorld = function() {
+		
+	var Ground = function (options) {
+		this.width = options.width;
+		this.height = options.height;
+		this.x = options.x;
+		this.y = options.y
+		this.color = options.color;
+		
 		var bodyDef = new b2BodyDef;
 		var fixDef = new b2FixtureDef;
 		//create ground
 		bodyDef.type = b2Body.b2_staticBody;
-		bodyDef.position.x = Helper.pxToMeter(this.x);
-		bodyDef.position.y = Helper.pxToMeter(this.y);
+		bodyDef.position.x = Helper.pxToMeter(options.x);
+		bodyDef.position.y = Helper.pxToMeter(options.y);
 		bodyDef.userData = "ground";
 		fixDef.shape = new b2PolygonShape;
-		fixDef.shape.SetAsBox(Helper.pxToMeter(this.width / 2), Helper.pxToMeter(this.height / 2));
+		fixDef.shape.SetAsBox(Helper.pxToMeter(options.width / 2), Helper.pxToMeter(options.height / 2));
 		fixDef.restitution = 0.5;
-		world.CreateBody(bodyDef).CreateFixture(fixDef);
+		this.body = world.CreateBody(bodyDef);
+		this.body.CreateFixture(fixDef);
 	};
 	
 	Ground.prototype.draw = function() {
 		ctx.save();
-		ctx.translate(this.x, this.y);
-		ctx.rotate(this.angle);
-		ctx.translate(-this.x, -this.y);
 		ctx.fillStyle = this.color;
 		ctx.fillRect(
-		    this.x-(this.width / 2),
-		    this.y-(this.height / 2),
+		    this.x - (this.width / 2),
+		    this.y - (this.height / 2),
 		    this.width,
 		    this.height
 		);
 		ctx.restore();
 	};
 
-	
 	
 	Init.start('game_canvas');
 	
